@@ -14,7 +14,25 @@ const agent = new https.Agent({
 
 // Heuristic: Cache in-memory for the duration of the server instance
 // Note: In Vercel (serverless), this only lasts as long as the lambda is warm.
-let cachedOperators: any[] | null = null;
+// Define types for scraper
+interface OperatorData {
+    id: string;
+    name: string;
+    phone: string;
+    address: {
+        full: string;
+        district: string;
+    };
+    email: string;
+    website: string;
+    district: string;
+    location: string;
+    category: string;
+    priceRange: string;
+    rating: string;
+}
+
+let cachedOperators: OperatorData[] | null = null;
 let lastCacheTime = 0;
 const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
 
@@ -43,18 +61,19 @@ export async function GET() {
             cached: false
         });
 
-    } catch (error: any) {
-        console.error('Scraping Fatal Error:', error.message);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Scraping Fatal Error:', message);
         return NextResponse.json({
             success: false,
             message: 'Failed to fetch live data',
-            error: error.message
+            error: message
         }, { status: 500 });
     }
 }
 
 async function scrapeAllPages() {
-    let operators: any[] = [];
+    let operators: OperatorData[] = [];
     let hasNextPage = true;
     let cookies: string | null = null;
     let pageCount = 1;
@@ -76,13 +95,13 @@ async function scrapeAllPages() {
         operators = operators.concat(pageOperators);
 
         // 2. Extract ASP.NET hidden fields required for pagination
-        const viewState = $('#__VIEWSTATE').val();
-        const eventValidation = $('#__EVENTVALIDATION').val();
-        const viewStateGenerator = $('#__VIEWSTATEGENERATOR').val();
+        const viewState = $('#__VIEWSTATE').val() as string | undefined;
+        const eventValidation = $('#__EVENTVALIDATION').val() as string | undefined;
+        const viewStateGenerator = $('#__VIEWSTATEGENERATOR').val() as string | undefined;
 
         // 3. Find "Next" button/link logic
         const nextPageNum = pageCount + 1;
-        let nextLink = $(`a[href*="Page$${nextPageNum}"]`).first();
+        const nextLink = $(`a[href*="Page$${nextPageNum}"]`).first();
 
         if (nextLink.length > 0) {
             const href = nextLink.attr('href');
@@ -93,7 +112,7 @@ async function scrapeAllPages() {
                 const eventArgument = match[2];
 
                 // POST request for the next page
-                const formData: any = {
+                const formData: Record<string, string | undefined> = {
                     __EVENTTARGET: eventTarget,
                     __EVENTARGUMENT: eventArgument,
                     __VIEWSTATE: viewState,
@@ -104,7 +123,7 @@ async function scrapeAllPages() {
                 // Add other inputs
                 $('input').each((i, el) => {
                     const name = $(el).attr('name');
-                    const val = $(el).val();
+                    const val = $(el).val() as string | undefined;
                     if (name && !formData[name] && name !== '__VIEWSTATE' && name !== '__EVENTVALIDATION') {
                         formData[name] = val;
                     }
@@ -138,7 +157,7 @@ async function scrapeAllPages() {
 }
 
 function extractOperatorsFromTable($: cheerio.CheerioAPI) {
-    const operators: any[] = [];
+    const operators: OperatorData[] = [];
 
     $('tr').each((i, el) => {
         const tds = $(el).find('td');

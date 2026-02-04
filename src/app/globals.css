@@ -16,7 +16,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
 }
 
 body {
@@ -100,7 +100,7 @@ body {
 }
 
 .title-sub {
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--font-outfit), sans-serif;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--accent-blue);

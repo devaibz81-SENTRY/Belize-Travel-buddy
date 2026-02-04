@@ -47,8 +47,9 @@ export default function Home() {
             } else {
                 throw new Error(result.message || 'Failed to fetch');
             }
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'An unknown error occurred';
+            setError(message);
         } finally {
             setLoading(false);
         }
