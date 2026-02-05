@@ -1,5 +1,3 @@
-'use client';
-
 import SearchOperators from '@/components/SearchOperators';
 
 export default function Home() {
